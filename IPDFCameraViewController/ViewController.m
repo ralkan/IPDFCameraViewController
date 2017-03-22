@@ -9,6 +9,7 @@
 #import "ViewController.h"
 
 #import "IPDFCameraViewController.h"
+#import <CoreImage/CoreImage.h>
 
 @interface ViewController ()
 
@@ -133,6 +134,35 @@
     [self.cameraViewController captureImageWithCompletionHander:^(NSString *imageFilePath)
     {
         UIImageView *captureImageView = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:imageFilePath]];
+      
+        CIContext *context = [CIContext contextWithOptions:nil];
+      
+        CIImage *inputImage = [[CIImage alloc] initWithImage:captureImageView.image];
+        CIFilter *exposureAdjustmentFilter = [CIFilter filterWithName:@"CIVignette"];
+        [exposureAdjustmentFilter setDefaults];
+        [exposureAdjustmentFilter setValue:inputImage forKey:@"inputImage"];
+        [exposureAdjustmentFilter setValue:[NSNumber numberWithFloat:-0.6f] forKey:@"inputIntensity"];
+        CIImage *outputImage = [exposureAdjustmentFilter valueForKey:@"outputImage"];
+        UIImage *image = [UIImage imageWithCGImage:[context createCGImage:outputImage fromRect:outputImage.extent]];
+      
+        CIImage *inputImageNew = [[CIImage alloc] initWithImage:image];
+        CIFilter *exposureAdjustmentFilterNew = [CIFilter filterWithName:@"CIGammaAdjust"];
+        [exposureAdjustmentFilterNew setDefaults];
+        [exposureAdjustmentFilterNew setValue:inputImageNew forKey:@"inputImage"];
+        [exposureAdjustmentFilterNew setValue:[NSNumber numberWithFloat:3.0f] forKey:@"inputPower"];
+        CIImage *outputImageNew = [exposureAdjustmentFilterNew valueForKey:@"outputImage"];
+      
+        UIImage *imageGamma = [UIImage imageWithCGImage:[context createCGImage:outputImageNew fromRect:outputImageNew.extent]];
+      
+      CIImage *inputImageGamma = [[CIImage alloc] initWithImage:imageGamma];
+      CIFilter *exposureAdjustmentFilterGamma = [CIFilter filterWithName:@"CIExposureAdjust"];
+      [exposureAdjustmentFilterGamma setDefaults];
+      [exposureAdjustmentFilterGamma setValue:inputImageGamma forKey:@"inputImage"];
+      [exposureAdjustmentFilterGamma setValue:[NSNumber numberWithFloat:0.25f] forKey:@"inputEV"];
+      CIImage *outputImageGamma = [exposureAdjustmentFilterGamma valueForKey:@"outputImage"];
+      
+
+        captureImageView.image = [UIImage imageWithCGImage:[context createCGImage:outputImageGamma fromRect:outputImageGamma.extent]];
         captureImageView.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.7];
         captureImageView.frame = CGRectOffset(weakSelf.view.bounds, 0, -weakSelf.view.bounds.size.height);
         captureImageView.alpha = 1.0;
